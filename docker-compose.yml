@@ -1,0 +1,61 @@
+version: "3.7"
+
+networks:
+  university_searcher_network:
+    name: ${PROJECT_NAME}_network
+
+services:
+  db:
+    image: postgres:13.3
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    container_name: ${PROJECT_NAME}-db
+    networks:
+      - ${PROJECT_NAME}_network
+    ports:
+      - "127.0.0.1:6432:5432"
+
+  wsgi:
+    build:
+      context: .
+      dockerfile: Docker.wsgi.dockerfile
+    command: sh -c "python manage.py collectstatic --no-input && python manage.py migrate --no-input && gunicorn settings.wsgi:application --bind 0.0.0.0:8333"
+    container_name: ${PROJECT_NAME}-wsgi
+    working_dir: /${MAIN_DIR}/
+    restart: always
+    env_file:
+      - .env
+    volumes:
+      - ./src/:/${MAIN_DIR}/
+      - ${STATIC_PATH}:/static
+      - ${MEDIA_PATH}:/media
+      - ${LOG_PATH}:/logs
+    depends_on:
+      - db
+    ports:
+      - "8444:8444"
+    networks:
+      - ${PROJECT_NAME}_network
+
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Docker.nginx.dockerfile
+    ports:
+      - "40080:80"
+    container_name: ${PROJECT_NAME}-nginx
+    volumes:
+      - ${STATIC_PATH}:/static
+      - ${MEDIA_PATH}:/media
+    depends_on:
+      - wsgi
+    networks:
+      - ${PROJECT_NAME}_network
+
+volumes:
+  pg_data:
+    name: pg_data
