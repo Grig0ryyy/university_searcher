@@ -37,7 +37,7 @@ services:
     depends_on:
       - db
     ports:
-      - "8444:8444"
+      - "8333:8333"
     networks:
       - ${PROJECT_NAME}_network
 
