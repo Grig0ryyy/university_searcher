@@ -12,6 +12,7 @@ gunicorn = "^20.1.0"
 psycopg2 = "^2.9.5"
 python-dotenv = "^1.0.0"
 djangorestframework = "^3.14.0"
+dependency-injector = "^4.41.0"
 
 
 [build-system]
